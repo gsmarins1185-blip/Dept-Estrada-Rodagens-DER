@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Gerencial do Efetivo — DER/RJ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  :root {
+    --azul:    #1a3a5c;
+    --azul2:   #2563a8;
+    --laranja: #e07b28;
+    --verde:   #2e7d5e;
+    --cinza1:  #f4f6f9;
+    --cinza2:  #e2e8f0;
+    --cinza3:  #94a3b8;
+    --texto:   #1e293b;
+    --branco:  #ffffff;
+    --card-shadow: 0 2px 12px rgba(0,0,0,0.09);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--cinza1); color: var(--texto); }
+
+  header {
+    background: var(--azul);
+    color: var(--branco);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 4px solid var(--laranja);
+  }
+  header .logo { font-size: 2.2rem; font-weight: 900; color: var(--laranja); letter-spacing: -1px; }
+  header .title-block h1 { font-size: 1.25rem; font-weight: 700; }
+  header .title-block p  { font-size: 0.82rem; opacity: .75; margin-top: 2px; }
+  header .badge {
+    margin-left: auto;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    padding: 6px 14px;
+    text-align: center;
+  }
+  header .badge span { display: block; }
+  header .badge .num { font-size: 1.6rem; font-weight: 800; color: var(--laranja); line-height: 1; }
+  header .badge .lbl { font-size: 0.72rem; opacity: .8; }
+
+  .main { padding: 24px 32px; max-width: 1400px; margin: auto; }
+
+  /* KPI row */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .kpi {
+    background: var(--branco);
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: var(--card-shadow);
+    border-top: 4px solid var(--azul2);
+    position: relative;
+  }
+  .kpi.green  { border-top-color: var(--verde); }
+  .kpi.orange { border-top-color: var(--laranja); }
+  .kpi.gray   { border-top-color: var(--cinza3); }
+  .kpi .val { font-size: 1.75rem; font-weight: 800; color: var(--azul); line-height: 1; }
+  .kpi.green  .val { color: var(--verde); }
+  .kpi.orange .val { color: var(--laranja); }
+  .kpi .lbl { font-size: 0.75rem; color: var(--cinza3); margin-top: 5px; text-transform: uppercase; letter-spacing: .5px; }
+  .kpi .sub  { font-size: 0.8rem; color: var(--cinza3); margin-top: 4px; }
+
+  /* Grid sections */
+  .section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--cinza3);
+    margin: 28px 0 12px;
+    padding-left: 4px;
+    border-left: 3px solid var(--laranja);
+    padding-left: 10px;
+  }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .grid-wide { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+  .card {
+    background: var(--branco);
+    border-radius: 12px;
+    padding: 20px 22px;
+    box-shadow: var(--card-shadow);
+  }
+  .card h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--azul);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--cinza2);
+  }
+  .card canvas { max-height: 240px; }
+
+  /* Bar table */
+  .bar-table { width: 100%; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; font-size: 0.8rem; }
+  .bar-row .lbl { width: 200px; flex-shrink: 0; color: var(--texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-row .bar-wrap { flex: 1; height: 14px; background: var(--cinza2); border-radius: 7px; overflow: hidden; }
+  .bar-row .bar-fill { height: 100%; border-radius: 7px; background: var(--azul2); transition: width .4s; }
+  .bar-row .cnt { width: 36px; text-align: right; font-weight: 700; color: var(--azul); flex-shrink: 0; }
+
+  /* Tabs */
+  .tab-row { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--cinza2);
+    background: var(--cinza1);
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--cinza3);
+    transition: all .2s;
+  }
+  .tab-btn.active { background: var(--azul2); border-color: var(--azul2); color: #fff; }
+
+  /* Setor details table */
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .mini-table th { text-align: left; color: var(--cinza3); font-weight: 600; padding: 4px 8px; border-bottom: 1.5px solid var(--cinza2); font-size: 0.72rem; text-transform: uppercase; }
+  .mini-table td { padding: 6px 8px; border-bottom: 1px solid var(--cinza2); }
+  .mini-table tr:last-child td { border-bottom: none; }
+  .mini-table .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: var(--cinza2);
+    color: var(--azul);
+  }
+  .tag.p  { background: #dbeafe; color: #1d4ed8; }
+  .tag.vp { background: #dcfce7; color: #15803d; }
+  .tag.af { background: #fef3c7; color: #b45309; }
+  .tag.op { background: #fce7f3; color: #9d174d; }
+  .tag.r1 { background: #ede9fe; color: #6d28d9; }
+  .tag.r2 { background: #cffafe; color: #0e7490; }
+  .tag.r3 { background: #ffedd5; color: #c2410c; }
+  .tag.ot { background: #f1f5f9; color: #64748b; }
+
+  /* pills */
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; background: var(--cinza2); color: var(--azul); }
+
+  /* kpi salário */
+  .sal-kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  .sal-kpi { background: var(--cinza1); border-radius: 10px; padding: 12px 16px; text-align: center; }
+  .sal-kpi .val { font-size: 1.25rem; font-weight: 800; color: var(--azul); line-height: 1.1; }
+  .sal-kpi.green .val { color: var(--verde); }
+  .sal-kpi.orange .val { color: var(--laranja); }
+  .sal-kpi .lbl { font-size: 0.7rem; color: var(--cinza3); text-transform: uppercase; letter-spacing: .4px; margin-top: 3px; }
+
+  /* filtro de categoria */
+  .filtro-cat-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--branco); border-radius: 12px; padding: 12px 20px;
+    box-shadow: var(--card-shadow); margin-bottom: 16px;
+  }
+  .filtro-cat-bar label { font-size: 0.78rem; font-weight: 700; color: var(--azul); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+  .filtro-cat-bar .cat-btn {
+    padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--cinza2);
+    background: var(--cinza1); cursor: pointer; font-size: 0.78rem; font-weight: 600;
+    color: var(--cinza3); transition: all .2s;
+  }
+  .filtro-cat-bar .cat-btn.active { background: var(--azul); border-color: var(--azul); color: #fff; }
+  .filtro-cat-bar .cat-count { font-size: 0.75rem; color: var(--cinza3); margin-left: auto; white-space: nowrap; }
+  #filtro-label-total { font-weight: 700; color: var(--azul); }
+
+  /* donut legend */
+  .donut-wrap { display: flex; align-items: center; gap: 20px; }
+  .donut-wrap canvas { flex-shrink: 0; max-width: 180px; max-height: 180px; }
+  .donut-legend { flex: 1; }
+  .donut-legend .leg-item { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 0.8rem; }
+  .donut-legend .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .donut-legend .leg-pct { margin-left: auto; font-weight: 700; color: var(--azul); }
+
+  footer { text-align: center; padding: 20px; font-size: 0.75rem; color: var(--cinza3); margin-top: 8px; }
+
+  @media (max-width: 900px) {
+    .grid2, .grid3, .grid-wide { grid-template-columns: 1fr; }
+    .main { padding: 16px; }
+    header { flex-wrap: wrap; }
+    header .badge { margin-left: 0; }
+    .bar-row .lbl { width: 130px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">DER</div>
+  <div class="title-block">
+    <h1>Dashboard Gerencial do Efetivo</h1>
+    <p>Departamento de Estradas de Rodagem do Estado do Rio de Janeiro &nbsp;·&nbsp; Posição: Maio/2026</p>
+  </div>
+  <div class="badge">
+    <span class="num">508</span>
+    <span class="lbl">Total do Efetivo</span>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="val">354</div>
+      <div class="lbl">Masculino</div>
+      <div class="sub">69,7% do efetivo</div>
+    </div>
+    <div class="kpi orange">
+      <div class="val">154</div>
+      <div class="lbl">Feminino</div>
+      <div class="sub">30,3% do efetivo</div>
+    </div>
+    <div class="kpi green">
+      <div class="val">51,7</div>
+      <div class="lbl">Idade Média</div>
+      <div class="sub">Faixa 60-69: maior grupo</div>
+    </div>
+    <div class="kpi">
+      <div class="val">21,7</div>
+      <div class="lbl">Tempo Médio (anos)</div>
+      <div class="sub">na instituição</div>
+    </div>
+    <div class="kpi orange">
+      <div class="val">R$ 6.213</div>
+      <div class="lbl">Salário Médio</div>
+      <div class="sub">Bruto mensal</div>
+    </div>
+    <div class="kpi green">
+      <div class="val">R$ 3,16M</div>
+      <div class="lbl">Folha Total</div>
+      <div class="sub">Bruto mensal</div>
+    </div>
+    <div class="kpi gray">
+      <div class="val">174</div>
+      <div class="lbl">Quadro Permanente</div>
+      <div class="sub">34,3% do efetivo</div>
+    </div>
+    <div class="kpi gray">
+      <div class="val">287</div>
+      <div class="lbl">Cargo Comissão</div>
+      <div class="sub">56,5% do efetivo</div>
+    </div>
+  </div>
+
+  <!-- ESTRUTURA ORGANIZACIONAL -->
+  <div class="section-title">Estrutura Organizacional — Por Diretoria</div>
+  <div class="grid-wide">
+    <div class="card">
+      <h3>Efetivo por Diretoria</h3>
+      <canvas id="chartDiretoria"></canvas>
+    </div>
+    <div class="card">
+      <h3>Top 10 Setores com Maior Efetivo</h3>
+      <div class="bar-table" id="topSetores"></div>
+    </div>
+  </div>
+
+  <!-- SUBCATEGORIAS DE SETORES -->
+  <div class="section-title">Subcategorias por Setor (Hierarquia de Códigos)</div>
+  <div class="card" style="margin-bottom:20px;">
+    <h3>Mapa Hierárquico dos Setores — Código × Descrição × Efetivo</h3>
+    <div class="tab-row" id="tabRow">
+      <button class="tab-btn active" onclick="showTab('pres')">Presidência</button>
+      <button class="tab-btn" onclick="showTab('vp')">Vice-Presidência</button>
+      <button class="tab-btn" onclick="showTab('adm')">Dir. Adm. e Finanças</button>
+      <button class="tab-btn" onclick="showTab('op')">Dir. Operação/Trânsito</button>
+      <button class="tab-btn" onclick="showTab('r1')">Dir. Obras Reg. I</button>
+      <button class="tab-btn" onclick="showTab('r2')">Dir. Obras Reg. II</button>
+      <button class="tab-btn" onclick="showTab('r3')">Dir. Obras Reg. III</button>
+      <button class="tab-btn" onclick="showTab('ot')">Outros</button>
+    </div>
+    <div id="tabContent"></div>
+  </div>
+
+  <!-- PERFIL DO EFETIVO -->
+  <div class="section-title">Perfil do Efetivo</div>
+
+  <div class="filtro-cat-bar">
+    <label>Filtrar por categoria:</label>
+    <button class="cat-btn active" onclick="setCat('Todos',this)">Todos</button>
+    <button class="cat-btn" onclick="setCat('Quadro Comissão',this)">Quadro Comissão</button>
+    <button class="cat-btn" onclick="setCat('Quadro Permanente',this)">Quadro Permanente</button>
+    <button class="cat-btn" onclick="setCat('Quadro Suplementar',this)">Quadro Suplementar</button>
+    <button class="cat-btn" onclick="setCat('Requisição Interna',this)">Req. Interna</button>
+    <button class="cat-btn" onclick="setCat('Atividades Específicas',this)">Ativ. Específicas</button>
+    <span class="cat-count">Exibindo: <span id="filtro-label-total">508</span> servidores</span>
+  </div>
+
+  <div class="grid3">
+    <div class="card">
+      <h3>Faixa Etária</h3>
+      <canvas id="chartIdade"></canvas>
+    </div>
+    <div class="card">
+      <h3>Tempo de Casa</h3>
+      <canvas id="chartTempo"></canvas>
+    </div>
+    <div class="card">
+      <h3>Distribuição por Sexo</h3>
+      <div class="donut-wrap">
+        <canvas id="chartSexo" style="max-width:160px;max-height:160px;"></canvas>
+        <div class="donut-legend" id="legendSexo"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Escolaridade</h3>
+      <canvas id="chartEscol"></canvas>
+    </div>
+    <div class="card">
+      <h3>Raça / Cor (Autodeclaração)</h3>
+      <div class="donut-wrap">
+        <canvas id="chartRaca" style="max-width:160px;max-height:160px;"></canvas>
+        <div class="donut-legend" id="legendRaca"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-wide" style="margin-bottom:20px;">
+    <div class="card">
+      <h3>Distribuição do Efetivo por Faixa Salarial (Salário Bruto)</h3>
+      <canvas id="chartSalDist"></canvas>
+    </div>
+    <div class="card">
+      <h3>Resumo Salarial (Salário Bruto)</h3>
+      <div class="sal-kpi-row">
+        <div class="sal-kpi">
+          <div class="val" id="salMedia">R$ 6.213</div>
+          <div class="lbl">Média</div>
+        </div>
+        <div class="sal-kpi green">
+          <div class="val" id="salMin">R$ 45</div>
+          <div class="lbl">Menor</div>
+        </div>
+        <div class="sal-kpi orange">
+          <div class="val" id="salMax">R$ 24.013</div>
+          <div class="lbl">Maior</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <canvas id="chartSalMini" style="max-height:160px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORIA / VÍNCULO -->
+  <div class="section-title">Categoria e Vínculo Empregatício</div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Categoria Funcional</h3>
+      <div class="donut-wrap">
+        <canvas id="chartCat" style="max-width:170px;max-height:170px;"></canvas>
+        <div class="donut-legend" id="legendCat"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Vínculo Empregatício</h3>
+      <div class="bar-table" id="vincBarras"></div>
+    </div>
+  </div>
+
+  <!-- CARGOS E ADMISSÕES -->
+  <div class="section-title">Cargos e Evolução de Admissões</div>
+  <div class="grid-wide">
+    <div class="card">
+      <h3>Admissões por Ano (2010–2026)</h3>
+      <canvas id="chartAdm"></canvas>
+    </div>
+    <div class="card">
+      <h3>Top 10 Cargos Efetivos</h3>
+      <div class="bar-table" id="cargoBarras"></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  DER/RJ · Dashboard Gerencial do Efetivo · Dados: Maio/2026 · Gerado automaticamente
+</footer>
+
+<script>
+Chart.register(ChartDataLabels);
+
+// ── DADOS ─────────────────────────────────────────────────────────────────
+const CORES = ['#2563a8','#e07b28','#2e7d5e','#7c3aed','#0e7490','#b45309','#9d174d','#15803d','#c2410c','#64748b'];
+const CORES_SOFT = ['#dbeafe','#fef3c7','#dcfce7','#ede9fe','#cffafe','#ffedd5','#fce7f3','#bbf7d0'];
+
+// Dados salariais por categoria (sem Pensão Especial)
+const SAL_CAT = {"Todos": {"dist": [120, 135, 148, 100, 5], "media": 6213, "min": 45, "max": 24013}, "Quadro Comissão": {"dist": [91, 52, 82, 62, 0], "media": 5787, "min": 1621, "max": 15813}, "Quadro Permanente": {"dist": [6, 67, 64, 33, 4], "media": 7280, "min": 2414, "max": 24013}, "Quadro Suplementar": {"dist": [15, 16, 1, 4, 1], "media": 5331, "min": 2266, "max": 20888}, "Requisição Interna": {"dist": [5, 0, 1, 1, 0], "media": 3683, "min": 45, "max": 10262}, "Atividades Específicas": {"dist": [3, 0, 0, 0, 0], "media": 1943, "min": 1943, "max": 1943}};
+const SAL_LABELS = ['Até R$ 3k', 'R$ 3k–5k', 'R$ 5k–10k', 'R$ 10k–20k', 'Acima R$ 20k'];
+const SAL_CORES = ['#2563a8','#2e7d5e','#e07b28','#7c3aed','#9d174d'];
+
+// Admissões e cargos por categoria
+const CARGOS_ADM_CAT = {"Todos": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [28, 2, 2, 1, 5, 7, 12, 12, 23, 27, 45, 43, 81, 35], "cargo_labels": ["Ag. Administrativo", "Engenheiro", "Trab. Qd Suplementar", "Ag. Aux. Administrativo", "Ag. Op. de Trânsito", "Ag. Trab. de Engenharia", "Téc. em Estradas", "Motorista Qd Suplem.", "Art. Pav. Alv. e Pedreira", "Aux. de Serv. Gerais"], "cargo_vals": [36, 23, 20, 19, 16, 16, 11, 11, 6, 5]}, "Quadro Comissão": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [0, 0, 1, 1, 5, 7, 12, 12, 22, 26, 44, 41, 79, 35], "cargo_labels": [], "cargo_vals": []}, "Quadro Permanente": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [28, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cargo_labels": ["Ag. Administrativo", "Engenheiro", "Ag. Aux. Administrativo", "Ag. Op. de Trânsito", "Ag. Trab. de Engenharia", "Téc. em Estradas", "Art. Pav. Alv. e Pedreira", "Aux. de Serv. Gerais", "Operador de Máquina", "Téc. de Planejamento"], "cargo_vals": [36, 23, 19, 16, 16, 11, 6, 5, 5, 4]}, "Quadro Suplementar": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cargo_labels": ["Trab. Qd Suplementar", "Motorista Qd Suplem.", "Arquiteto Qd Suplem.", "Téc. de Contabilidade Qd Suplem."], "cargo_vals": [20, 11, 5, 1]}, "Requisição Interna": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0], "cargo_labels": [], "cargo_vals": []}, "Atividades Específicas": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0], "cargo_labels": [], "cargo_vals": []}};
+
+// Dados por categoria para os gráficos de perfil
+const PERFIL_CAT = {"Todos": {"age": [48, 93, 77, 61, 185, 44], "ten": [148, 52, 33, 3, 181], "sexo": [354, 154], "escol": [62, 25, 8, 179, 16, 40, 158, 20], "raca": [304, 156, 46, 2, 0]}, "Quadro Comissão": {"age": [48, 86, 64, 41, 40, 8], "ten": [143, 51, 1, 2, 0], "sexo": [174, 113], "escol": [9, 6, 3, 115, 11, 36, 88, 19], "raca": [168, 96, 23, 0, 0]}, "Quadro Permanente": {"age": [0, 4, 12, 19, 114, 25], "ten": [0, 0, 30, 0, 144], "sexo": [138, 36], "escol": [33, 15, 3, 57, 5, 4, 56, 1], "raca": [109, 48, 16, 1, 0]}, "Quadro Suplementar": {"age": [0, 0, 0, 0, 27, 10], "ten": [0, 0, 0, 0, 37], "sexo": [35, 2], "escol": [20, 4, 2, 5, 0, 0, 6, 0], "raca": [19, 10, 7, 1, 0]}, "Requisição Interna": {"age": [0, 1, 1, 1, 3, 1], "ten": [3, 1, 2, 1, 0], "sexo": [5, 2], "escol": [0, 0, 0, 2, 0, 0, 5, 0], "raca": [5, 2, 0, 0, 0]}, "Atividades Específicas": {"age": [0, 2, 0, 0, 1, 0], "ten": [2, 0, 0, 0, 0], "sexo": [2, 1], "escol": [0, 0, 0, 0, 0, 0, 3, 0], "raca": [3, 0, 0, 0, 0]}};
+
+const porDiretoria = {
+  labels: ['Presidência','Vice-Presidência','Dir. Adm. e Finanças','Dir. Operação/Trânsito','Dir. Obras Reg. I','Dir. Obras Reg. II','Dir. Obras Reg. III','Outros/Especiais'],
+  values: [128, 61, 82, 25, 48, 73, 67, 24]
+};
+
+const topSetores = [
+  ['Assess. Téc. Espec. Planej. Orçamento', 39],
+  ['Coordenadoria de Usinas', 24],
+  ['Dir. Obras e Conservação - Reg. II', 19],
+  ['Presidência', 19],
+  ['Dir. Obras e Conservação - Reg. I', 18],
+  ['Chefia de Gabinete da Presidência', 14],
+  ['DISP_INT - DER', 14],
+  ['Vice-Presidência', 13],
+  ['Coord. Assistência ao Servidor', 12],
+  ['9ª Residência - Araruama', 12],
+];
+
+const faixasEtarias = {
+  labels: ['19-29','30-39','40-49','50-59','60-69','70+'],
+  values: [48, 93, 77, 61, 185, 44]
+};
+
+const tempoCasa = {
+  labels: ['< 5 anos','5-9 anos','10-19 anos','20-29 anos','30+ anos'],
+  values: [148, 52, 33, 3, 181]
+};
+
+const escolaridade = {
+  labels: ['Fund. Incompleto','Fund. Completo','Médio Incompleto','Médio Completo','Médio Técnico','Superior Incomp.','Superior Completo','Pós-Graduação'],
+  values: [62, 25, 8, 179, 16, 40, 158, 20]
+};
+
+const racas = {
+  labels: ['Branca','Parda','Preta','Amarela','Não Informado'],
+  values: [304, 156, 46, 2, 0]
+};
+
+const categorias = {
+  labels: ['Quadro Comissão','Quadro Permanente','Quadro Suplementar','Req. Interna','Ativ. Específicas'],
+  values: [287, 174, 37, 7, 3]
+};
+
+const vinculos = {
+  labels: ['Cargo Comissão','Efetivo','Concurso Público','Req. Interna','Desig. Conselho','Req. Externa','Contr. Indeterminado'],
+  values: [286, 180, 30, 7, 3, 1, 1]
+};
+
+const cargos = {
+  labels: ['Ag. Administrativo','Engenheiro','Trab. Qd Suplementar','Ag. Aux. Administrativo','Ag. Op. de Trânsito','Ag. Trab. de Engenharia','Téc. em Estradas','Motorista Qd Suplem.','Art. Pav. Alv. e Pedreira','Aux. de Serv. Gerais'],
+  values: [36, 23, 20, 19, 16, 16, 11, 11, 6, 5]
+};
+
+const admissoes = {
+  anos: [2010,2011,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026],
+  vals: [28,2,2,1,5,7,12,12,23,27,45,43,81,35]
+};
+
+// Estrutura hierárquica dos setores
+const SETORES_HIER = {
+  pres: {
+    title: 'Presidência (Código 253101)',
+    tag: 'p',
+    rows: [
+      ['253101000000000', 'Presidência', 19, '-'],
+      ['253101010000000', 'Chefia de Gabinete da Presidência', 14, '→ Presidência'],
+      ['253101020000000', 'Assessoria Técnica Jurídica', 10, '→ Presidência'],
+      ['253101030000000', 'Assessoria de Comunicação', 3, '→ Presidência'],
+      ['253101040000000', 'Assessoria de Vias Concedidas', 1, '→ Presidência'],
+      ['253101050000000', 'Assess. Técnica Especial Planej. Orçamento', 39, '→ Presidência'],
+      ['253101050102000', 'Coord. de Gerência da Rede Viária', 4, '→→ Assess. Planej.'],
+      ['253101050104000', 'Coord. de Projetos de Planejamento', 1, '→→ Assess. Planej.'],
+      ['253101050105000', 'Coordenadoria de Trânsito', 5, '→→ Assess. Planej.'],
+      ['253101060000000', 'Assessoria de Controle Interno', 5, '→ Presidência'],
+      ['253101080000000', 'Coord. Técnica de Projetos I', 9, '→ Presidência'],
+      ['253101090000000', 'Coord. Técnica de Projetos II', 9, '→ Presidência'],
+      ['253101100000000', 'Coord. Técnica de Projetos III', 8, '→ Presidência'],
+      ['253101110000000', 'Ouvidoria', 1, '→ Presidência'],
+    ]
+  },
+  vp: {
+    title: 'Vice-Presidência (Código 253102)',
+    tag: 'vp',
+    rows: [
+      ['253102000000000', 'Vice-Presidência', 13, '-'],
+      ['253102010000000', 'Superintendência de Sistemas de Informação', 11, '→ Vice-Presidência'],
+      ['253102010100000', 'Coordenadoria de Telecomunicações', 3, '→→ Sup. Sist. Informação'],
+      ['253102020000000', 'Coordenadoria de Usinas', 24, '→ Vice-Presidência'],
+      ['253102020100000', 'Usina I - Parada de Lucas', 1, '→→ Coord. Usinas'],
+      ['253102020300000', 'Usina III - São Gonçalo', 1, '→→ Coord. Usinas'],
+      ['253102030000000', 'Coordenadoria de Materiais', 5, '→ Vice-Presidência'],
+      ['253102050000000', 'Coord. de Educação de Trânsito', 3, '→ Vice-Presidência'],
+    ]
+  },
+  adm: {
+    title: 'Diretoria Geral de Adm. e Finanças (Código 253103)',
+    tag: 'af',
+    rows: [
+      ['253103000000000', 'Diretoria Geral de Adm. e Finanças', 3, '-'],
+      ['253103010000000', 'Superintendência Administrativa', 8, '→ Dir. Adm.'],
+      ['253103010100000', 'Coordenadoria de Engenharia', 3, '→→ Sup. Adm.'],
+      ['253103010200000', 'Coord. de Frotas e Equipamentos', 4, '→→ Sup. Adm.'],
+      ['253103010300000', 'Coordenadoria de Recursos Humanos', 9, '→→ Sup. Adm.'],
+      ['253103010400000', 'Coordenadoria de Serviços Gerais', 6, '→→ Sup. Adm.'],
+      ['253103010401000', 'Protocolo Geral', 3, '→→→ Serv. Gerais'],
+      ['253103010500000', 'Coord. de Assistência ao Servidor', 12, '→→ Sup. Adm.'],
+      ['253103020000000', 'Superintendência Financeira', 6, '→ Dir. Adm.'],
+      ['253103020100000', 'Coordenadoria de Orçamento', 1, '→→ Sup. Financeira'],
+      ['253103020200000', 'Coordenadoria de Contabilidade', 4, '→→ Sup. Financeira'],
+      ['253103020300000', 'Coordenadoria Financeira', 1, '→→ Sup. Financeira'],
+      ['253103030000000', 'Superintendência de Licitações', 1, '→ Dir. Adm.'],
+      ['253103030100000', 'Coordenadoria de Licitações', 5, '→→ Sup. Licitações'],
+      ['253103030200000', 'Coordenadoria de Aquisições', 1, '→→ Sup. Licitações'],
+      ['253103040000000', 'Superintendência de Niterói', 5, '→ Dir. Adm.'],
+      ['253103040100000', 'Coordenadoria de Patrimônio', 6, '→→ Sup. Niterói'],
+      ['253103040200000', 'Arquivo Geral', 2, '→→ Sup. Niterói'],
+      ['253103040400000', 'Almoxarifado', 2, '→→ Sup. Niterói'],
+    ]
+  },
+  op: {
+    title: 'Diretoria de Operação, Monitoramento e Controle de Trânsito (Código 253104)',
+    tag: 'op',
+    rows: [
+      ['253104000000000', 'Dir. Operação, Monit. e Contr. Trânsito', 10, '-'],
+      ['253104010000000', 'Superintendência de Sinalização', 8, '→ Dir. Operação'],
+      ['253104020100000', 'Coordenadoria de Vias Operadas', 5, '→ Dir. Operação'],
+      ['253104020200000', 'Coord. de Controle de Multas', 1, '→ Dir. Operação'],
+      ['253104020300000', 'Coord. de Preservação de Faixa de Domínio', 1, '→ Dir. Operação'],
+    ]
+  },
+  r1: {
+    title: 'Diretoria de Obras e Conservação — Regional I (Código 253105)',
+    tag: 'r1',
+    rows: [
+      ['253105000000000', 'Dir. Obras e Conservação - Regional I', 18, '-'],
+      ['253105020000000', '1ª Residência - Nova Friburgo', 5, '→ Dir. Obras Reg. I'],
+      ['253105030000000', '3ª Residência - Campos dos Goytacazes', 6, '→ Dir. Obras Reg. I'],
+      ['253105040000000', '6ª Residência - Itaperuna', 2, '→ Dir. Obras Reg. I'],
+      ['253105050000000', '10ª Residência - Miracema', 8, '→ Dir. Obras Reg. I'],
+      ['253105060000000', '13ª Residência - São Fidélis', 4, '→ Dir. Obras Reg. I'],
+      ['253105070000000', '19ª Residência - Bom Jesus do Itabapoana', 5, '→ Dir. Obras Reg. I'],
+    ]
+  },
+  r2: {
+    title: 'Diretoria de Obras e Conservação — Regional II (Código 253106)',
+    tag: 'r2',
+    rows: [
+      ['253106000000000', 'Dir. Obras e Conservação - Regional II', 19, '-'],
+      ['253106020000000', '4ª Residência - São Gonçalo', 5, '→ Dir. Obras Reg. II'],
+      ['253106030000000', '7ª Residência - Macaé', 10, '→ Dir. Obras Reg. II'],
+      ['253106040000000', '9ª Residência - Araruama', 12, '→ Dir. Obras Reg. II'],
+      ['253106050000000', '14ª Residência - Mesquita', 7, '→ Dir. Obras Reg. II'],
+      ['253106060000000', '15ª Residência - Nova Iguaçu', 8, '→ Dir. Obras Reg. II'],
+      ['253106070000000', '16ª Residência - Petrópolis', 6, '→ Dir. Obras Reg. II'],
+      ['253106080000000', '20ª Residência - Itaboraí', 6, '→ Dir. Obras Reg. II'],
+    ]
+  },
+  r3: {
+    title: 'Diretoria de Obras e Conservação — Regional III (Código 253107)',
+    tag: 'r3',
+    rows: [
+      ['253107000000000', 'Dir. Obras e Conservação - Regional III', 8, '-'],
+      ['253107020000000', '2ª Residência - Vassouras', 11, '→ Dir. Obras Reg. III'],
+      ['253107030000000', '5ª Residência - Barra Mansa', 7, '→ Dir. Obras Reg. III'],
+      ['253107040000000', '8ª Residência - Cantagalo', 9, '→ Dir. Obras Reg. III'],
+      ['253107050000000', '11ª Residência - Piraí', 6, '→ Dir. Obras Reg. III'],
+      ['253107060000000', '12ª Residência - Barra do Piraí', 5, '→ Dir. Obras Reg. III'],
+      ['253107070000000', '17ª Residência - Santa Maria Madalena', 10, '→ Dir. Obras Reg. III'],
+      ['253107080000000', '18ª Residência - Cordeiro', 11, '→ Dir. Obras Reg. III'],
+    ]
+  },
+  ot: {
+    title: 'Outros / Especiais (Código 253000)',
+    tag: 'ot',
+    rows: [
+      ['253000000000666', 'LOT_PROV-DER_RJ (Lotação Provisória)', 2, 'Especial'],
+      ['253000000000777', 'AFASTADOS - DER', 2, 'Especial'],
+      ['253000000000888', 'DISP_INT - DER (Disponibilidade Interna)', 14, 'Especial'],
+      ['253000000000981', 'Conselho Fiscal', 3, 'Especial'],
+      ['253000000000999', 'DISP_EXT - DER (Disponibilidade Externa)', 5, 'Especial'],
+    ]
+  }
+};
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function makeBarTable(containerId, labels, values, color) {
+  const el = document.getElementById(containerId);
+  const max = Math.max(...values);
+  el.innerHTML = labels.map((l, i) => `
+    <div class="bar-row">
+      <span class="lbl" title="${l}">${l}</span>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${(values[i]/max*100).toFixed(1)}%;background:${color || CORES[i % CORES.length]}"></div></div>
+      <span class="cnt">${values[i]}</span>
+    </div>`).join('');
+}
+
+// opções de datalabels para barras verticais (coluna)
+function dlVertical(color) {
+  return {
+    datalabels: {
+      anchor: 'end', align: 'end', offset: 2,
+      font: { size: 11, weight: '700' },
+      color: color || '#1e293b',
+      formatter: v => v > 0 ? v : '',
+    }
+  };
+}
+// opções de datalabels para barras horizontais
+function dlHorizontal(color) {
+  return {
+    datalabels: {
+      anchor: 'end', align: 'end', offset: 4,
+      font: { size: 11, weight: '700' },
+      color: color || '#1e293b',
+      formatter: v => v > 0 ? v : '',
+    }
+  };
+}
+
+// Espaço extra no eixo para não cortar rótulo
+const paddingTop = { layout: { padding: { top: 20 } } };
+const paddingRight = { layout: { padding: { right: 36 } } };
+
+function updateDonut(chart, labels, values, legendId) {
+  const total = values.reduce((a,b)=>a+b,0);
+  chart.data.datasets[0].data = values;
+  chart.update();
+  if (legendId) {
+    const colors = CORES.slice(0, labels.length);
+    document.getElementById(legendId).innerHTML = labels.map((l, i) => `
+      <div class="leg-item">
+        <div class="dot" style="background:${colors[i]}"></div>
+        <span>${l}</span>
+        <span class="leg-pct">${total>0?(values[i]/total*100).toFixed(1):0}%</span>
+      </div>`).join('');
+  }
+}
+
+function makeDonut(canvasId, labels, values, legendId) {
+  const colors = CORES.slice(0, labels.length);
+  const total = values.reduce((a,b)=>a+b,0);
+  const ch = new Chart(document.getElementById(canvasId), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+    options: {
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} (${(ctx.parsed/total*100).toFixed(1)}%)` } },
+        datalabels: { display: false }
+      },
+      cutout: '62%', animation: { animateScale: true }
+    }
+  });
+  if (legendId) {
+    const leg = document.getElementById(legendId);
+    leg.innerHTML = labels.map((l, i) => `
+      <div class="leg-item">
+        <div class="dot" style="background:${colors[i]}"></div>
+        <span>${l}</span>
+        <span class="leg-pct">${(values[i]/total*100).toFixed(1)}%</span>
+      </div>`).join('');
+  }
+  return ch;
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────
+function showTab(key) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  const s = SETORES_HIER[key];
+  const maxEfet = Math.max(...s.rows.map(r => r[2]));
+  document.getElementById('tabContent').innerHTML = `
+    <p style="font-size:.8rem;color:#64748b;margin-bottom:12px;"><strong>${s.title}</strong></p>
+    <table class="mini-table">
+      <thead><tr><th>Código</th><th>Setor / Unidade</th><th>Hierarquia</th><th style="text-align:center">Efetivo</th><th style="width:150px">Representação</th></tr></thead>
+      <tbody>${s.rows.map(r => `
+        <tr>
+          <td style="font-family:monospace;font-size:.72rem;color:#64748b">${r[0]}</td>
+          <td>${r[1]}</td>
+          <td><span class="tag ${s.tag}">${r[3]}</span></td>
+          <td style="text-align:center;font-weight:700">${r[2]}</td>
+          <td><div style="background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden"><div style="background:${CORES[0]};width:${(r[2]/maxEfet*100).toFixed(0)}%;height:100%;border-radius:6px"></div></div></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── FILTRO DE CATEGORIA ───────────────────────────────────────────────────
+let chartIdade, chartTempo, chartEscol, chartSexo, chartRaca, chartSalDist, chartSalMini, chartAdm;
+
+function fmt(v) { return 'R$ ' + v.toLocaleString('pt-BR'); }
+
+function setCat(cat, btn) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const d = PERFIL_CAT[cat];
+  const s = SAL_CAT[cat];
+  const total = d.sexo.reduce((a,b)=>a+b,0);
+  document.getElementById('filtro-label-total').textContent = total;
+
+  chartIdade.data.datasets[0].data = d.age;
+  chartIdade.update();
+
+  chartTempo.data.datasets[0].data = d.ten;
+  chartTempo.update();
+
+  chartEscol.data.datasets[0].data = d.escol;
+  chartEscol.update();
+
+  updateDonut(chartSexo, ['Masculino','Feminino'], d.sexo, 'legendSexo');
+  updateDonut(chartRaca, ['Branca','Parda','Preta','Amarela','Não Informado'], d.raca, 'legendRaca');
+
+  // salário
+  document.getElementById('salMedia').textContent = fmt(s.media);
+  document.getElementById('salMin').textContent   = fmt(s.min);
+  document.getElementById('salMax').textContent   = fmt(s.max);
+  chartSalDist.data.datasets[0].data = s.dist;
+  chartSalDist.update();
+  chartSalMini.data.datasets[0].data = s.dist;
+  chartSalMini.update();
+
+  // admissões e cargos
+  const ca = CARGOS_ADM_CAT[cat];
+  chartAdm.data.datasets[0].data = ca.adm_vals;
+  chartAdm.data.datasets[0].backgroundColor = ca.adm_anos.map(y => y >= 2023 ? CORES[1] : CORES[0]);
+  chartAdm.update();
+  if (ca.cargo_labels.length > 0) {
+    makeBarTable('cargoBarras', ca.cargo_labels, ca.cargo_vals, CORES[1]);
+  } else {
+    document.getElementById('cargoBarras').innerHTML =
+      '<p style="font-size:.8rem;color:#94a3b8;padding:12px 0;">Cargos efetivos não aplicáveis para esta categoria.</p>';
+  }
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────
+window.onload = () => {
+  // Diretoria bar (horizontal)
+  new Chart(document.getElementById('chartDiretoria'), {
+    type: 'bar',
+    data: {
+      labels: porDiretoria.labels,
+      datasets: [{ data: porDiretoria.values, backgroundColor: CORES, borderRadius: 6 }]
+    },
+    options: {
+      indexAxis: 'y',
+      ...paddingRight,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x} servidores` } },
+        ...dlHorizontal()
+      },
+      scales: { x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } }, y: { ticks: { font: { size: 11 } } } }
+    }
+  });
+
+  // Top setores bar table
+  makeBarTable('topSetores', topSetores.map(x=>x[0]), topSetores.map(x=>x[1]), CORES[0]);
+
+  // Faixa etária (vertical, filtrável)
+  chartIdade = new Chart(document.getElementById('chartIdade'), {
+    type: 'bar',
+    data: {
+      labels: faixasEtarias.labels,
+      datasets: [{ label: 'Servidores', data: faixasEtarias.values, backgroundColor: CORES.slice(0,6), borderRadius: 6 }]
+    },
+    options: {
+      ...paddingTop,
+      plugins: { legend: { display: false }, ...dlVertical() },
+      scales: { y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } }, x: { ticks: { font: { size: 11 } } } }
+    }
+  });
+
+  // Tempo de casa (vertical, filtrável)
+  chartTempo = new Chart(document.getElementById('chartTempo'), {
+    type: 'bar',
+    data: {
+      labels: tempoCasa.labels,
+      datasets: [{ label: 'Servidores', data: tempoCasa.values, backgroundColor: [CORES[2],CORES[1],CORES[0],CORES[3],CORES[4]], borderRadius: 6 }]
+    },
+    options: {
+      ...paddingTop,
+      plugins: { legend: { display: false }, ...dlVertical() },
+      scales: { y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } }, x: { ticks: { font: { size: 10 } } } }
+    }
+  });
+
+  // Sexo donut (filtrável)
+  chartSexo = makeDonut('chartSexo', ['Masculino','Feminino'], [358, 179], 'legendSexo');
+
+  // Escolaridade (horizontal, filtrável)
+  chartEscol = new Chart(document.getElementById('chartEscol'), {
+    type: 'bar',
+    data: {
+      labels: escolaridade.labels,
+      datasets: [{ data: escolaridade.values, backgroundColor: CORES[0], borderRadius: 5 }]
+    },
+    options: {
+      indexAxis: 'y',
+      ...paddingRight,
+      plugins: { legend: { display: false }, ...dlHorizontal() },
+      scales: { x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } }, y: { ticks: { font: { size: 11 } } } }
+    }
+  });
+
+  // Raça donut (filtrável)
+  chartRaca = makeDonut('chartRaca', ['Branca','Parda','Preta','Amarela','Não Informado'], [318, 164, 48, 2, 5], 'legendRaca');
+
+  // Categoria donut (estático)
+  makeDonut('chartCat', categorias.labels, categorias.values, 'legendCat');
+
+  // Vínculo bar table (estático)
+  makeBarTable('vincBarras', vinculos.labels, vinculos.values, CORES[2]);
+
+  // Cargos bar table
+  makeBarTable('cargoBarras', cargos.labels, cargos.values, CORES[1]);
+
+  // Admissões (vertical, filtrável)
+  chartAdm = new Chart(document.getElementById('chartAdm'), {
+    type: 'bar',
+    data: {
+      labels: admissoes.anos,
+      datasets: [{
+        label: 'Admissões',
+        data: admissoes.vals,
+        backgroundColor: admissoes.anos.map(y => y >= 2023 ? CORES[1] : CORES[0]),
+        borderRadius: 5
+      }]
+    },
+    options: {
+      ...paddingTop,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} admissões` } },
+        ...dlVertical()
+      },
+      scales: {
+        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
+        x: { ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Distribuição salarial (principal, vertical)
+  chartSalDist = new Chart(document.getElementById('chartSalDist'), {
+    type: 'bar',
+    data: {
+      labels: SAL_LABELS,
+      datasets: [{ data: SAL_CAT['Todos'].dist, backgroundColor: SAL_CORES, borderRadius: 6 }]
+    },
+    options: {
+      ...paddingTop,
+      plugins: { legend: { display: false }, ...dlVertical() },
+      scales: {
+        y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } }, title: { display: true, text: 'Nº de Servidores', font: { size: 11 } } },
+        x: { ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Mini gráfico no card de resumo
+  chartSalMini = new Chart(document.getElementById('chartSalMini'), {
+    type: 'bar',
+    data: {
+      labels: SAL_LABELS,
+      datasets: [{ data: SAL_CAT['Todos'].dist, backgroundColor: SAL_CORES, borderRadius: 5 }]
+    },
+    options: {
+      ...paddingTop,
+      plugins: { legend: { display: false }, datalabels: { display: false } },
+      scales: {
+        y: { display: false },
+        x: { ticks: { font: { size: 9 }, maxRotation: 30 } }
+      }
+    }
+  });
+
+  // show default tab
+  showTab('pres');
+  document.querySelector('.tab-btn').classList.add('active');
+};
+</script>
+</body>
+</html>
