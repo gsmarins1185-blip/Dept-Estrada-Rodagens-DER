@@ -403,6 +403,9 @@ const SAL_CAT = {"Todos": {"dist": [120, 135, 148, 100, 5], "media": 6213, "min"
 const SAL_LABELS = ['Até R$ 3k', 'R$ 3k–5k', 'R$ 5k–10k', 'R$ 10k–20k', 'Acima R$ 20k'];
 const SAL_CORES = ['#2563a8','#2e7d5e','#e07b28','#7c3aed','#9d174d'];
 
+// Admissões e cargos por categoria
+const CARGOS_ADM_CAT = {"Todos": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [28, 2, 2, 1, 5, 7, 12, 12, 23, 27, 45, 43, 81, 35], "cargo_labels": ["Ag. Administrativo", "Engenheiro", "Trab. Qd Suplementar", "Ag. Aux. Administrativo", "Ag. Op. de Trânsito", "Ag. Trab. de Engenharia", "Téc. em Estradas", "Motorista Qd Suplem.", "Art. Pav. Alv. e Pedreira", "Aux. de Serv. Gerais"], "cargo_vals": [36, 23, 20, 19, 16, 16, 11, 11, 6, 5]}, "Quadro Comissão": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [0, 0, 1, 1, 5, 7, 12, 12, 22, 26, 44, 41, 79, 35], "cargo_labels": [], "cargo_vals": []}, "Quadro Permanente": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [28, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cargo_labels": ["Ag. Administrativo", "Engenheiro", "Ag. Aux. Administrativo", "Ag. Op. de Trânsito", "Ag. Trab. de Engenharia", "Téc. em Estradas", "Art. Pav. Alv. e Pedreira", "Aux. de Serv. Gerais", "Operador de Máquina", "Téc. de Planejamento"], "cargo_vals": [36, 23, 19, 16, 16, 11, 6, 5, 5, 4]}, "Quadro Suplementar": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cargo_labels": ["Trab. Qd Suplementar", "Motorista Qd Suplem.", "Arquiteto Qd Suplem.", "Téc. de Contabilidade Qd Suplem."], "cargo_vals": [20, 11, 5, 1]}, "Requisição Interna": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0], "cargo_labels": [], "cargo_vals": []}, "Atividades Específicas": {"adm_anos": [2010, 2011, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026], "adm_vals": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0], "cargo_labels": [], "cargo_vals": []}};
+
 // Dados por categoria para os gráficos de perfil
 const PERFIL_CAT = {"Todos": {"age": [48, 93, 77, 61, 185, 44], "ten": [148, 52, 33, 3, 181], "sexo": [354, 154], "escol": [62, 25, 8, 179, 16, 40, 158, 20], "raca": [304, 156, 46, 2, 0]}, "Quadro Comissão": {"age": [48, 86, 64, 41, 40, 8], "ten": [143, 51, 1, 2, 0], "sexo": [174, 113], "escol": [9, 6, 3, 115, 11, 36, 88, 19], "raca": [168, 96, 23, 0, 0]}, "Quadro Permanente": {"age": [0, 4, 12, 19, 114, 25], "ten": [0, 0, 30, 0, 144], "sexo": [138, 36], "escol": [33, 15, 3, 57, 5, 4, 56, 1], "raca": [109, 48, 16, 1, 0]}, "Quadro Suplementar": {"age": [0, 0, 0, 0, 27, 10], "ten": [0, 0, 0, 0, 37], "sexo": [35, 2], "escol": [20, 4, 2, 5, 0, 0, 6, 0], "raca": [19, 10, 7, 1, 0]}, "Requisição Interna": {"age": [0, 1, 1, 1, 3, 1], "ten": [3, 1, 2, 1, 0], "sexo": [5, 2], "escol": [0, 0, 0, 2, 0, 0, 5, 0], "raca": [5, 2, 0, 0, 0]}, "Atividades Específicas": {"age": [0, 2, 0, 0, 1, 0], "ten": [2, 0, 0, 0, 0], "sexo": [2, 1], "escol": [0, 0, 0, 0, 0, 0, 3, 0], "raca": [3, 0, 0, 0, 0]}};
 
@@ -694,7 +697,7 @@ function showTab(key) {
 }
 
 // ── FILTRO DE CATEGORIA ───────────────────────────────────────────────────
-let chartIdade, chartTempo, chartEscol, chartSexo, chartRaca, chartSalDist, chartSalMini;
+let chartIdade, chartTempo, chartEscol, chartSexo, chartRaca, chartSalDist, chartSalMini, chartAdm;
 
 function fmt(v) { return 'R$ ' + v.toLocaleString('pt-BR'); }
 
@@ -726,6 +729,18 @@ function setCat(cat, btn) {
   chartSalDist.update();
   chartSalMini.data.datasets[0].data = s.dist;
   chartSalMini.update();
+
+  // admissões e cargos
+  const ca = CARGOS_ADM_CAT[cat];
+  chartAdm.data.datasets[0].data = ca.adm_vals;
+  chartAdm.data.datasets[0].backgroundColor = ca.adm_anos.map(y => y >= 2023 ? CORES[1] : CORES[0]);
+  chartAdm.update();
+  if (ca.cargo_labels.length > 0) {
+    makeBarTable('cargoBarras', ca.cargo_labels, ca.cargo_vals, CORES[1]);
+  } else {
+    document.getElementById('cargoBarras').innerHTML =
+      '<p style="font-size:.8rem;color:#94a3b8;padding:12px 0;">Cargos efetivos não aplicáveis para esta categoria.</p>';
+  }
 }
 
 // ── CHARTS ────────────────────────────────────────────────────────────────
@@ -807,11 +822,11 @@ window.onload = () => {
   // Vínculo bar table (estático)
   makeBarTable('vincBarras', vinculos.labels, vinculos.values, CORES[2]);
 
-  // Cargos bar table (estático)
+  // Cargos bar table
   makeBarTable('cargoBarras', cargos.labels, cargos.values, CORES[1]);
 
-  // Admissões (vertical)
-  new Chart(document.getElementById('chartAdm'), {
+  // Admissões (vertical, filtrável)
+  chartAdm = new Chart(document.getElementById('chartAdm'), {
     type: 'bar',
     data: {
       labels: admissoes.anos,
